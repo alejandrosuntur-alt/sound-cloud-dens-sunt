@@ -1437,9 +1437,11 @@ fetch("canciones.csv")
     console.warn("Aviso al cargar canciones.csv:", error.message);
   });
 
+const BASE_AUDIO = "https://archive.org/download/TU_IDENTIFICADOR/";
+
 function obtenerRutaAudio(cancion) {
-  if (enlacesDrive[cancion.archivo]) {
-    return enlacesDrive[cancion.archivo];
+  return BASE_AUDIO + encodeURIComponent(cancion.archivo);
+}
   }
   if (cancion.id) {
     return "https://drive.google.com/uc?export=download&id=" + encodeURIComponent(cancion.id);
