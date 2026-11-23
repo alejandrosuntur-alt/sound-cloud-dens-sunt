@@ -244,6 +244,11 @@ h2 { margin-top: 20px; font-weight: 700; letter-spacing: -0.5px; font-size: 21px
  background: linear-gradient(135deg, #7dd3fc, #6366f1);
 }
 
+.boton.primario.reproduciendo-btn {
+ background: linear-gradient(135deg, #34d399, var(--accent-cyan));
+ box-shadow: 0 0 20px rgba(52, 211, 153, 0.45);
+}
+
 .boton.activo {
  background: var(--accent-cyan);
  color: #030712;
@@ -636,6 +641,36 @@ h2 { margin-top: 20px; font-weight: 700; letter-spacing: -0.5px; font-size: 21px
 .eq-band input { width: 100%; accent-color: var(--accent-cyan); cursor: pointer; }
 .eq-value { font-size: 10.5px; color: var(--accent-cyan); font-weight: 700; margin-top: 4px; }
 
+.fx-grid {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: 14px;
+ margin: 14px 0 16px;
+}
+
+.fx-card {
+ padding: 12px 14px;
+ border-radius: 12px;
+ background: rgba(15, 23, 42, 0.65);
+ border: 1px solid var(--border-subtle);
+}
+
+.fx-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 8px;
+ font-size: 11.5px;
+ font-weight: 700;
+ color: var(--text-primary);
+}
+
+.fx-card input[type="range"] {
+ width: 100%;
+ accent-color: var(--accent-indigo);
+ cursor: pointer;
+}
+
 #ecualizador {
  height: 35px;
  display: flex;
@@ -729,6 +764,7 @@ audio { display: none; }
 @media (max-width: 768px) {
  body { padding-bottom: 290px; }
  .eq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .fx-grid { grid-template-columns: 1fr; }
  #letraKaraoke { height: 170px; }
  .lineaLetra.activa { font-size: 18px; }
  #reproductor { bottom: 8px; width: calc(100% - 16px); padding: 14px 16px; border-radius: 20px; }
@@ -792,6 +828,24 @@ audio { display: none; }
  <div class="eq-band"><label for="eqMediosAgudos">Presencia (4kHz)</label><input id="eqMediosAgudos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
  <div class="eq-band"><label for="eqAgudos">Brillo (10kHz)</label><input id="eqAgudos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
  </div>
+
+ <div class="fx-grid">
+ <div class="fx-card">
+ <div class="fx-header">
+ <label for="refuerzoGraves">🔊 Refuerzo de graves (Bass Boost)</label>
+ <span id="valorRefuerzoGraves" class="eq-value" style="margin:0;">0%</span>
+ </div>
+ <input id="refuerzoGraves" type="range" min="0" max="100" value="0">
+ </div>
+ <div class="fx-card">
+ <div class="fx-header">
+ <label for="sonidoEnvolvente">🎧 Sonido envolvente (Surround)</label>
+ <span id="valorSonidoEnvolvente" class="eq-value" style="margin:0;">0%</span>
+ </div>
+ <input id="sonidoEnvolvente" type="range" min="0" max="100" value="0">
+ </div>
+ </div>
+
  <button class="boton" onclick="restablecerEcualizador()" style="font-size:12px; padding:8px 16px;">↺ Restablecer curva plana</button>
  </section>
  <section id="panelCreditos" class="extra-panel" hidden style="color:var(--text-secondary); font-size:13px; line-height:1.7;"></section>
@@ -1535,12 +1589,23 @@ function mostrarCanciones(lista) {
  lista.forEach(function(cancion, index) {
  const bloque = document.createElement("div");
 
- const estaSonando = (indiceActual >= 0 && cancionesActuales[indiceActual] && cancionesActuales[indiceActual].archivo === cancion.archivo);
- bloque.className = "cancion" + (estaSonando ? " reproduciendo-actual" : "");
+ const esTemaSeleccionado = (indiceActual >= 0 && cancionesActuales[indiceActual] && cancionesActuales[indiceActual].archivo === cancion.archivo);
+ const estaSonando = esTemaSeleccionado && !audio.paused;
+
+ bloque.className = "cancion" + (esTemaSeleccionado ? " reproduciendo-actual" : "");
 
  const esFavorita = favoritos.includes(cancion.archivo);
  const estaEnPlaylist = playlist.includes(cancion.archivo);
  let textoPlaylist = tipoListaActual === "playlist" ? (estaEnPlaylist ? "➖ Quitar" : "➕ Playlist") : (estaEnPlaylist ? "✅ En lista" : "➕ Playlist");
+
+ let textoBotonReproducir = "▶ Reproducir";
+ let claseExtraBoton = "";
+ if (estaSonando) {
+ textoBotonReproducir = "🔊 Reproduciendo";
+ claseExtraBoton = " reproduciendo-btn";
+ } else if (esTemaSeleccionado) {
+ textoBotonReproducir = "⏸ Pausado";
+ }
 
  bloque.innerHTML = `
  <span class="track-index">${estaSonando ? "▶" : (index + 1)}</span>
@@ -1554,7 +1619,7 @@ function mostrarCanciones(lista) {
  <button class="btn-cancion-accion favoritoBoton" title="Favorito">${esFavorita ? "❤️" : "♡"}</button>
  <button class="btn-cancion-accion playlistBoton" title="Gestionar Playlist">${textoPlaylist}</button>
  <button class="btn-cancion-accion descargarBoton" title="Descargar pista">📥 Descargar</button>
- <button class="boton primario" style="padding: 8px 16px; font-size:12px;">▶ Reproducir</button>
+ <button class="boton primario btn-reproducir-pista${claseExtraBoton}" style="padding: 8px 16px; font-size:12px;">${textoBotonReproducir}</button>
  </div>
  `;
 
@@ -1567,9 +1632,13 @@ function mostrarCanciones(lista) {
 
  bloque.querySelector(".playlistBoton").onclick = function() { agregarAPlaylist(cancion.archivo); };
  bloque.querySelector(".descargarBoton").onclick = function() { descargarArchivoIndividual(cancion); };
- bloque.querySelector(".boton.primario").onclick = function() {
+ bloque.querySelector(".btn-reproducir-pista").onclick = function() {
  const indiceReal = cancionesActuales.findIndex(function(c) { return c.archivo === cancion.archivo; });
+ if (indiceReal === indiceActual) {
+ reproducirOPausar();
+ } else {
  reproducirPorIndice(indiceReal);
+ }
  };
 
  fragmento.appendChild(bloque);
@@ -1678,6 +1747,10 @@ function reproducirPorIndice(indice) {
 
 async function reproducirAudio() {
  try {
+ inicializarMotorAudioDSP();
+ if (audioCtx && audioCtx.state === "suspended") {
+ await audioCtx.resume();
+ }
  actualizarEfectoSonoro();
  await audio.play();
  } catch (error) {
@@ -1931,9 +2004,15 @@ function actualizarIconoVolumen() {
 iconoVolumen.addEventListener("click", function() { audio.muted = !audio.muted; actualizarIconoVolumen(); });
 
 /* =====================================================
- ECUALIZADOR Y VISUALIZADOR
+ ECUALIZADOR REAL (WEB AUDIO API), GRAVES, ENVOLVENTE Y VISUALIZADOR
  ===================================================== */
 const idsEQ = ["eqBajos", "eqSemi", "eqMedios", "eqMediosAgudos", "eqAgudos"];
+const frecuenciasEQ = [60, 250, 1000, 4000, 10000];
+const inputRefuerzoGraves = document.getElementById("refuerzoGraves");
+const inputSonidoEnvolvente = document.getElementById("sonidoEnvolvente");
+const valorRefuerzoGraves = document.getElementById("valorRefuerzoGraves");
+const valorSonidoEnvolvente = document.getElementById("valorSonidoEnvolvente");
+
 const cantidadBarras = 56;
 const contenedorEcualizador = document.getElementById("ecualizador");
 const barras = [];
@@ -1946,6 +2025,110 @@ for (let i = 0; i < cantidadBarras; i++) {
 }
 contenedorEcualizador.appendChild(fragmentoBarras);
 
+let audioCtx = null;
+let filtrosEQ = [];
+let nodoBassBoost = null;
+let nodoCompresor = null;
+let nodoSurroundGainL = null;
+let nodoSurroundGainR = null;
+let nodoSurroundDelayL = null;
+let nodoSurroundDelayR = null;
+let dspConectado = false;
+
+function inicializarMotorAudioDSP() {
+ if (dspConectado) return;
+ const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+ if (!AudioContextClass) return;
+
+ try {
+ if (!audioCtx) {
+ audioCtx = new AudioContextClass();
+ }
+ const fuente = audioCtx.createMediaElementSource(audio);
+
+ filtrosEQ = frecuenciasEQ.map(function(freq, idx) {
+ const filtro = audioCtx.createBiquadFilter();
+ if (idx === 0) {
+ filtro.type = "lowshelf";
+ } else if (idx === frecuenciasEQ.length - 1) {
+ filtro.type = "highshelf";
+ } else {
+ filtro.type = "peaking";
+ filtro.Q.value = 1.4;
+ }
+ filtro.frequency.value = freq;
+ filtro.gain.value = 0;
+ return filtro;
+ });
+
+ nodoBassBoost = audioCtx.createBiquadFilter();
+ nodoBassBoost.type = "lowshelf";
+ nodoBassBoost.frequency.value = 110;
+ nodoBassBoost.gain.value = 0;
+
+ nodoCompresor = audioCtx.createDynamicsCompressor();
+ nodoCompresor.threshold.value = -14;
+ nodoCompresor.knee.value = 18;
+ nodoCompresor.ratio.value = 4;
+ nodoCompresor.attack.value = 0.005;
+ nodoCompresor.release.value = 0.15;
+
+ const splitter = audioCtx.createChannelSplitter(2);
+ const merger = audioCtx.createChannelMerger(2);
+
+ const dryGainL = audioCtx.createGain();
+ const dryGainR = audioCtx.createGain();
+ dryGainL.gain.value = 1;
+ dryGainR.gain.value = 1;
+
+ nodoSurroundDelayL = audioCtx.createDelay(0.1);
+ nodoSurroundDelayR = audioCtx.createDelay(0.1);
+ nodoSurroundDelayL.delayTime.value = 0.014;
+ nodoSurroundDelayR.delayTime.value = 0.022;
+
+ const invertL = audioCtx.createGain();
+ const invertR = audioCtx.createGain();
+ invertL.gain.value = -1;
+ invertR.gain.value = -1;
+
+ nodoSurroundGainL = audioCtx.createGain();
+ nodoSurroundGainR = audioCtx.createGain();
+ nodoSurroundGainL.gain.value = 0;
+ nodoSurroundGainR.gain.value = 0;
+
+ let ultimoNodo = fuente;
+ filtrosEQ.forEach(function(filtro) {
+ ultimoNodo.connect(filtro);
+ ultimoNodo = filtro;
+ });
+
+ ultimoNodo.connect(nodoBassBoost);
+ nodoBassBoost.connect(nodoCompresor);
+
+ nodoCompresor.connect(splitter);
+
+ splitter.connect(dryGainL, 0);
+ splitter.connect(dryGainR, 1);
+ dryGainL.connect(merger, 0, 0);
+ dryGainR.connect(merger, 0, 1);
+
+ splitter.connect(invertR, 1);
+ invertR.connect(nodoSurroundDelayL);
+ nodoSurroundDelayL.connect(nodoSurroundGainL);
+ nodoSurroundGainL.connect(merger, 0, 0);
+
+ splitter.connect(invertL, 0);
+ invertL.connect(nodoSurroundDelayR);
+ nodoSurroundDelayR.connect(nodoSurroundGainR);
+ nodoSurroundGainR.connect(merger, 0, 1);
+
+ merger.connect(audioCtx.destination);
+ dspConectado = true;
+ } catch (err) {
+ console.warn("Web Audio DSP no disponible para esta fuente:", err);
+ }
+}
+
 let animacionVisualActiva = false;
 let fotogramaVisual = 0;
 
@@ -1957,15 +2140,42 @@ function actualizarTextoEQ(control) {
  }
 }
 
+function actualizarEtiquetasEfectos() {
+ const gravesPct = Number(inputRefuerzoGraves ? inputRefuerzoGraves.value : 0);
+ const surroundPct = Number(inputSonidoEnvolvente ? inputSonidoEnvolvente.value : 0);
+ if (valorRefuerzoGraves) {
+ const dbApprox = ((gravesPct / 100) * 14).toFixed(1);
+ valorRefuerzoGraves.textContent = gravesPct + "% (+" + dbApprox + " dB)";
+ }
+ if (valorSonidoEnvolvente) {
+ valorSonidoEnvolvente.textContent = surroundPct + "%";
+ }
+}
+
 function actualizarEfectoSonoro() {
- let gananciaTotal = 0;
- idsEQ.forEach(function(id) {
+ audio.volume = barraVolumen.value / 100;
+
+ const gravesPct = Number(inputRefuerzoGraves ? inputRefuerzoGraves.value : 0);
+ const surroundPct = Number(inputSonidoEnvolvente ? inputSonidoEnvolvente.value : 0);
+
+ if (dspConectado && audioCtx) {
+ const ahora = audioCtx.currentTime;
+ idsEQ.forEach(function(id, idx) {
  const c = document.getElementById(id);
- if (c) gananciaTotal += Number(c.value);
+ if (c && filtrosEQ[idx]) {
+ filtrosEQ[idx].gain.setTargetAtTime(Number(c.value), ahora, 0.025);
+ }
  });
- const volBase = barraVolumen.value / 100;
- const factor = Math.max(0.1, Math.min(1.0, volBase * (1 + (gananciaTotal / 60))));
- audio.volume = factor;
+ if (nodoBassBoost) {
+ const gananciaGraves = (gravesPct / 100) * 14;
+ nodoBassBoost.gain.setTargetAtTime(gananciaGraves, ahora, 0.025);
+ }
+ if (nodoSurroundGainL && nodoSurroundGainR) {
+ const anchoEspacial = (surroundPct / 100) * 0.55;
+ nodoSurroundGainL.gain.setTargetAtTime(anchoEspacial, ahora, 0.025);
+ nodoSurroundGainR.gain.setTargetAtTime(anchoEspacial, ahora, 0.025);
+ }
+ }
 }
 
 idsEQ.forEach(function(id, i) {
@@ -1984,6 +2194,34 @@ idsEQ.forEach(function(id, i) {
  });
 });
 
+const bassGuardado = localStorage.getItem("sounddens_bass_boost");
+if (bassGuardado !== null && inputRefuerzoGraves) {
+ inputRefuerzoGraves.value = Math.max(0, Math.min(100, Number(bassGuardado)));
+}
+
+const surroundGuardado = localStorage.getItem("sounddens_surround");
+if (surroundGuardado !== null && inputSonidoEnvolvente) {
+ inputSonidoEnvolvente.value = Math.max(0, Math.min(100, Number(surroundGuardado)));
+}
+
+actualizarEtiquetasEfectos();
+
+if (inputRefuerzoGraves) {
+ inputRefuerzoGraves.addEventListener("input", function() {
+ localStorage.setItem("sounddens_bass_boost", inputRefuerzoGraves.value);
+ actualizarEtiquetasEfectos();
+ actualizarEfectoSonoro();
+ });
+}
+
+if (inputSonidoEnvolvente) {
+ inputSonidoEnvolvente.addEventListener("input", function() {
+ localStorage.setItem("sounddens_surround", inputSonidoEnvolvente.value);
+ actualizarEtiquetasEfectos();
+ actualizarEfectoSonoro();
+ });
+}
+
 function alternarEcualizador() {
  const panel = document.getElementById("panelEcualizador");
  panel.hidden = !panel.hidden;
@@ -1994,6 +2232,14 @@ function restablecerEcualizador() {
  const c = document.getElementById(id);
  if (c) { c.value = 0; c.dispatchEvent(new Event("input", { bubbles: true })); }
  });
+ if (inputRefuerzoGraves) {
+ inputRefuerzoGraves.value = 0;
+ inputRefuerzoGraves.dispatchEvent(new Event("input", { bubbles: true }));
+ }
+ if (inputSonidoEnvolvente) {
+ inputSonidoEnvolvente.value = 0;
+ inputSonidoEnvolvente.dispatchEvent(new Event("input", { bubbles: true }));
+ }
 }
 
 function iniciarVisualizador() {
@@ -2010,17 +2256,30 @@ function animarVisualizador() {
  if (!animacionVisualActiva) return;
  const t = audio.currentTime || 0;
  const intensidad = audio.paused ? 0 : 1;
+ const gravesFactor = 1 + (Number(inputRefuerzoGraves ? inputRefuerzoGraves.value : 0) / 100) * 0.45;
  barras.forEach(function(barra, i) {
  const onda1 = Math.abs(Math.sin(t * 9.0 + i * 0.42));
  const onda2 = Math.abs(Math.sin(t * 4.2 - i * 0.18));
- const altura = intensidad ? 3 + (onda1 * 16 + onda2 * 8) * (0.3 + ((i % 10) / 11)) : 3;
- barra.style.height = altura + "px";
+ const pesoBanda = i < 14 ? gravesFactor : 1;
+ const altura = intensidad ? 3 + (onda1 * 16 + onda2 * 8) * (0.3 + ((i % 10) / 11)) * pesoBanda : 3;
+ barra.style.height = Math.min(34, altura) + "px";
  });
  fotogramaVisual = requestAnimationFrame(animarVisualizador);
 }
 
-audio.addEventListener("play", function() { iniciarVisualizador(); actualizarEfectoSonoro(); });
-audio.addEventListener("pause", detenerVisualizador);
+audio.addEventListener("play", function() {
+ iniciarVisualizador();
+ actualizarEfectoSonoro();
+ if (vistaAlbum.style.display === "block") {
+ mostrarCanciones(cancionesActuales);
+ }
+});
+audio.addEventListener("pause", function() {
+ detenerVisualizador();
+ if (vistaAlbum.style.display === "block") {
+ mostrarCanciones(cancionesActuales);
+ }
+});
 audio.addEventListener("ended", function() { detenerVisualizador(); if (!repetirTema) siguienteCancion(); });
 
 /* =========================================
