@@ -146,6 +146,31 @@ h2 { margin-top: 20px; font-weight: 700; letter-spacing: -0.5px; font-size: 21px
  gap: 20px;
 }
 
+#resultadosCancionesBusqueda {
+ margin-top: 28px;
+}
+
+.search-results-title {
+ margin: 0 0 14px;
+ font-size: 17px;
+ font-weight: 700;
+ color: var(--text-primary);
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 10px;
+}
+
+.search-results-count {
+ font-size: 12px;
+ font-weight: 600;
+ color: var(--accent-cyan);
+ background: rgba(56, 189, 248, 0.1);
+ border: 1px solid rgba(56, 189, 248, 0.25);
+ padding: 3px 10px;
+ border-radius: 20px;
+}
+
 .album {
  background: var(--bg-card);
  backdrop-filter: blur(16px);
@@ -832,6 +857,9 @@ audio { display: none; }
  .indicador-melodia { height: 12px; padding: 1px 4px; }
  .indicador-melodia span { width: 2px; }
 
+ #resultadosCancionesBusqueda { margin-top: 18px; }
+ .search-results-title { font-size: 14px; margin-bottom: 10px; }
+
  /* Vista de álbum fácil con una mano */
  .album-view-bar { gap: 10px; margin-bottom: 12px; }
  .album-view-bar .boton { padding: 8px 12px; font-size: 12px; border-radius: 11px; }
@@ -1011,16 +1039,17 @@ audio { display: none; }
  <h2>Explorar Álbumes</h2>
  <div class="search-wrapper">
  <span class="search-icon">🔍</span>
- <input id="buscador" placeholder="Buscar álbum, banda o artista...">
+ <input id="buscador" placeholder="Buscar álbum, artista o canción...">
  </div>
  </div>
  <div id="albumes"></div>
+ <div id="resultadosCancionesBusqueda"></div>
  </section>
 
  <section id="vistaAlbum">
  <div class="album-view-bar">
  <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
- <button class="boton" onclick="volverInicio()">← Catálogo</button>
+ <button class="boton" onclick="volverInicio()">← Volver a los álbumes</button>
  <h2 id="tituloAlbum" style="margin:0; font-size:24px; font-weight:800;"></h2>
  </div>
  <div class="search-wrapper" style="max-width: 340px;">
@@ -1609,6 +1638,7 @@ const vistaInicio = document.getElementById("vistaInicio");
 const vistaAlbum = document.getElementById("vistaAlbum");
 const buscador = document.getElementById("buscador");
 const buscadorCanciones = document.getElementById("buscadorCanciones");
+const resultadosCancionesBusqueda = document.getElementById("resultadosCancionesBusqueda");
 const audio = document.getElementById("audio");
 
 const barraProgreso = document.getElementById("barraProgreso");
@@ -1623,6 +1653,8 @@ const tituloLetra = document.getElementById("tituloLetra");
 let albumActual = "";
 let cancionesActuales = [];
 let indiceActual = -1;
+let cancionReproduciendoArchivo = "";
+let cancionReproduciendoAlbum = "";
 let modoAleatorio = false;
 let repetirLista = false;
 let repetirTema = false;
@@ -1649,13 +1681,120 @@ function obtenerAlbumes() {
  return albumesCache;
 }
 
+function esLaMismaPistaActiva(cancion) {
+ if (!cancion || !cancionReproduciendoArchivo) return false;
+ const mismoArchivo = cancion.archivo === cancionReproduciendoArchivo;
+ if (!mismoArchivo) return false;
+ if (tipoListaActual === "album" && albumActual) {
+ return cancion.album === cancionReproduciendoAlbum && albumActual === cancionReproduciendoAlbum;
+ }
+ if (cancionReproduciendoAlbum && cancion.album) {
+ return cancion.album === cancionReproduciendoAlbum;
+ }
+ return true;
+}
+
+function mostrarResultadosCancionesEnInicio(texto) {
+ const limpio = (texto || "").trim().toLowerCase();
+ if (!limpio) {
+ resultadosCancionesBusqueda.innerHTML = "";
+ return;
+ }
+
+ const coincidencias = canciones.filter(function(c) {
+ return (c.titulo + " " + c.artista + " " + c.album).toLowerCase().includes(limpio);
+ });
+
+ resultadosCancionesBusqueda.innerHTML = `
+ <div class="search-results-title">
+ <span>🎵 Canciones coincidentes</span>
+ <span class="search-results-count">${coincidencias.length}</span>
+ </div>
+ <div id="listaResultadosBusqueda"></div>
+ `;
+
+ const listaDestino = document.getElementById("listaResultadosBusqueda");
+ if (coincidencias.length === 0) {
+ listaDestino.innerHTML = "<p style='color:var(--text-secondary)'>No se encontraron canciones que coincidan con tu búsqueda.</p>";
+ return;
+ }
+
+ const fragmento = document.createDocumentFragment();
+ coincidencias.forEach(function(cancion, index) {
+ const bloque = document.createElement("div");
+ const esTemaSeleccionado = esLaMismaPistaActiva(cancion);
+ const estaSonando = esTemaSeleccionado && !audio.paused;
+
+ bloque.className = "cancion" + (esTemaSeleccionado ? " reproduciendo-actual" : "");
+
+ const esFavorita = favoritos.includes(cancion.archivo);
+ const estaEnPlaylist = playlist.includes(cancion.archivo);
+ const textoPlaylist = estaEnPlaylist ? "✅ En lista" : "➕ Playlist";
+
+ let textoBotonReproducir = "▶ Reproducir";
+ let claseExtraBoton = "";
+ if (estaSonando) {
+ textoBotonReproducir = "Reproduciendo";
+ claseExtraBoton = " reproduciendo-btn";
+ } else if (esTemaSeleccionado) {
+ textoBotonReproducir = "⏸ Pausado";
+ }
+
+ bloque.innerHTML = `
+ <span class="track-index">${estaSonando ? "▶" : (index + 1)}</span>
+ <img src="${cancion.portada}" alt="${cancion.titulo}" loading="lazy">
+ <div class="cancion-datos">
+ <h3>${cancion.titulo}</h3>
+ <p>${cancion.artista} · <strong>${cancion.album}</strong></p>
+ </div>
+ ${estaSonando ? '<div class="indicador-melodia" title="Reproduciendo ahora"><span></span><span></span><span></span></div>' : ''}
+ <div class="acciones-cancion">
+ <button class="btn-cancion-accion favoritoBoton" title="Favorito">${esFavorita ? "❤️" : "♡"}</button>
+ <button class="btn-cancion-accion playlistBoton" title="Gestionar Playlist">${textoPlaylist}</button>
+ <button class="btn-cancion-accion abrirAlbumBtn" title="Abrir álbum">💿 Álbum</button>
+ <button class="boton primario btn-reproducir-pista${claseExtraBoton}" style="padding: 8px 16px; font-size:12px;">${textoBotonReproducir}</button>
+ </div>
+ `;
+
+ bloque.querySelector(".favoritoBoton").onclick = function() {
+ cambiarFavorito(cancion.archivo);
+ mostrarResultadosCancionesEnInicio(buscador.value);
+ actualizarBotonMeEncanta();
+ };
+
+ bloque.querySelector(".playlistBoton").onclick = function() {
+ agregarAPlaylist(cancion.archivo);
+ mostrarResultadosCancionesEnInicio(buscador.value);
+ };
+
+ bloque.querySelector(".abrirAlbumBtn").onclick = function() {
+ abrirAlbum(cancion.album);
+ };
+
+ bloque.querySelector(".btn-reproducir-pista").onclick = function() {
+ if (esTemaSeleccionado) {
+ reproducirOPausar();
+ return;
+ }
+ albumActual = cancion.album;
+ tipoListaActual = "album";
+ cancionesActuales = canciones.filter(function(c) { return c.album === cancion.album; });
+ const idxEnAlbum = cancionesActuales.findIndex(function(c) { return c.archivo === cancion.archivo; });
+ reproducirPorIndice(idxEnAlbum >= 0 ? idxEnAlbum : 0);
+ };
+
+ fragmento.appendChild(bloque);
+ });
+ listaDestino.appendChild(fragmento);
+}
+
 function mostrarAlbumes(filtro) {
  const contenedor = document.getElementById("albumes");
  contenedor.innerHTML = "";
  const albumes = obtenerAlbumes();
  const texto = (filtro || "").toLowerCase();
 
- const albumEnReproduccion = (indiceActual >= 0 && cancionesActuales[indiceActual]) ? cancionesActuales[indiceActual].album : "";
+ const albumEnReproduccion = cancionReproduciendoAlbum || ((indiceActual >= 0 && cancionesActuales[indiceActual]) ? cancionesActuales[indiceActual].album : "");
 
  const fragmento = document.createDocumentFragment();
  albumes.forEach(function(album) {
@@ -1685,6 +1824,8 @@ function mostrarAlbumes(filtro) {
  if (contenedor.children.length === 0) {
  contenedor.innerHTML = "<p style='color:var(--text-secondary)'>No se encontraron álbumes que coincidan con tu búsqueda.</p>";
  }
+
+ mostrarResultadosCancionesEnInicio(filtro);
 }
 
 function abrirAlbum(nombre) {
@@ -1700,9 +1841,10 @@ function abrirAlbum(nombre) {
 }
 
 function irAlAlbumActual() {
- if (indiceActual >= 0 && cancionesActuales[indiceActual]) {
- const cancion = cancionesActuales[indiceActual];
- abrirAlbum(cancion.album);
+ if (cancionReproduciendoAlbum) {
+ abrirAlbum(cancionReproduciendoAlbum);
+ } else if (indiceActual >= 0 && cancionesActuales[indiceActual]) {
+ abrirAlbum(cancionesActuales[indiceActual].album);
  } else if (albumActual && albumActual !== "Mis favoritos" && albumActual !== "Mi playlist") {
  abrirAlbum(albumActual);
  }
@@ -1744,7 +1886,7 @@ function mostrarCanciones(lista) {
  lista.forEach(function(cancion, index) {
  const bloque = document.createElement("div");
 
- const esTemaSeleccionado = (indiceActual >= 0 && cancionesActuales[indiceActual] && cancionesActuales[indiceActual].archivo === cancion.archivo);
+ const esTemaSeleccionado = esLaMismaPistaActiva(cancion);
  const estaSonando = esTemaSeleccionado && !audio.paused;
 
  bloque.className = "cancion" + (esTemaSeleccionado ? " reproduciendo-actual" : "");
@@ -1756,7 +1898,7 @@ function mostrarCanciones(lista) {
  let textoBotonReproducir = "▶ Reproducir";
  let claseExtraBoton = "";
  if (estaSonando) {
- textoBotonReproducir = "🔊 Reproduciendo";
+ textoBotonReproducir = "Reproduciendo";
  claseExtraBoton = " reproduciendo-btn";
  } else if (esTemaSeleccionado) {
  textoBotonReproducir = "⏸ Pausado";
@@ -1789,16 +1931,25 @@ function mostrarCanciones(lista) {
  bloque.querySelector(".descargarBoton").onclick = function() { descargarArchivoIndividual(cancion); };
  bloque.querySelector(".btn-reproducir-pista").onclick = function() {
  const indiceReal = cancionesActuales.findIndex(function(c) { return c.archivo === cancion.archivo; });
- if (indiceReal === indiceActual) {
+ if (esTemaSeleccionado) {
  reproducirOPausar();
  } else {
- reproducirPorIndice(indiceReal);
+ reproducirPorIndice(indiceReal >= 0 ? indiceReal : 0);
  }
  };
 
  fragmento.appendChild(bloque);
  });
  contenedor.appendChild(fragmento);
+}
+
+function refrescarEstadosReproduccion() {
+ if (vistaAlbum.style.display === "block") {
+ mostrarCanciones(cancionesActuales);
+ }
+ if (vistaInicio.style.display !== "none") {
+ mostrarAlbumes(buscador.value);
+ }
 }
 
 function descargarArchivoIndividual(cancion) {
@@ -1828,16 +1979,19 @@ function agregarAPlaylist(archivo) {
 }
 
 function darMeEncanta() {
- if (indiceActual < 0) return;
- cambiarFavorito(cancionesActuales[indiceActual].archivo);
+ if (!cancionReproduciendoArchivo && indiceActual < 0) return;
+ const archivoObjetivo = cancionReproduciendoArchivo || (cancionesActuales[indiceActual] && cancionesActuales[indiceActual].archivo);
+ if (!archivoObjetivo) return;
+ cambiarFavorito(archivoObjetivo);
  actualizarBotonMeEncanta();
- mostrarCanciones(cancionesActuales);
+ refrescarEstadosReproduccion();
 }
 
 function actualizarBotonMeEncanta() {
  const boton = document.getElementById("botonMeEncanta");
- if (indiceActual < 0) { boton.textContent = "♡"; boton.classList.remove("activo"); return; }
- if (favoritos.includes(cancionesActuales[indiceActual].archivo)) { boton.textContent = "❤️"; boton.classList.add("activo"); }
+ const archivoObjetivo = cancionReproduciendoArchivo || ((indiceActual >= 0 && cancionesActuales[indiceActual]) ? cancionesActuales[indiceActual].archivo : "");
+ if (!archivoObjetivo) { boton.textContent = "♡"; boton.classList.remove("activo"); return; }
+ if (favoritos.includes(archivoObjetivo)) { boton.textContent = "❤️"; boton.classList.add("activo"); }
  else { boton.textContent = "♡"; boton.classList.remove("activo"); }
 }
 
@@ -1872,6 +2026,8 @@ function reproducirPorIndice(indice) {
  if (cancionesActuales.length === 0) return;
  indiceActual = indice;
  const cancion = cancionesActuales[indice];
+ cancionReproduciendoArchivo = cancion.archivo;
+ cancionReproduciendoAlbum = cancion.album;
 
  audio.pause();
  audio.src = obtenerRutaAudio(cancion);
@@ -1882,10 +2038,7 @@ function reproducirPorIndice(indice) {
  document.getElementById("artistaActual").textContent = cancion.artista + " · " + cancion.album;
  document.getElementById("portadaActual").src = cancion.portada;
 
- if (vistaAlbum.style.display === "block") {
- mostrarCanciones(cancionesActuales);
- }
- mostrarAlbumes(buscador.value);
+ refrescarEstadosReproduccion();
 
  actualizarMiniCola();
  prepararLetra(cancion);
@@ -1914,7 +2067,7 @@ async function reproducirAudio() {
 }
 
 function reproducirOPausar() {
- if (indiceActual < 0) return;
+ if (!cancionReproduciendoArchivo && indiceActual < 0) return;
  if (audio.paused) reproducirAudio();
  else audio.pause();
 }
@@ -1940,7 +2093,6 @@ function siguienteCancion() {
  cancionesActuales = canciones.filter(function(c) { return c.album === siguienteAlbum; });
  if (vistaAlbum.style.display === "block") {
  document.getElementById("tituloAlbum").textContent = siguienteAlbum;
- mostrarCanciones(cancionesActuales);
  }
  reproducirPorIndice(0);
  }
@@ -2425,15 +2577,11 @@ function animarVisualizador() {
 audio.addEventListener("play", function() {
  iniciarVisualizador();
  actualizarEfectoSonoro();
- if (vistaAlbum.style.display === "block") {
- mostrarCanciones(cancionesActuales);
- }
+ refrescarEstadosReproduccion();
 });
 audio.addEventListener("pause", function() {
  detenerVisualizador();
- if (vistaAlbum.style.display === "block") {
- mostrarCanciones(cancionesActuales);
- }
+ refrescarEstadosReproduccion();
 });
 audio.addEventListener("ended", function() { detenerVisualizador(); if (!repetirTema) siguienteCancion(); });
 
@@ -2441,14 +2589,15 @@ audio.addEventListener("ended", function() { detenerVisualizador(); if (!repetir
  ACCIONES EXTRAS (DESCARGA ACTUAL, COMPARTIR, CRÉDITOS)
  ========================================= */
 function descargarCancionActual() {
- if (indiceActual < 0) { alert("Selecciona una canción primero."); return; }
- const c = cancionesActuales[indiceActual];
- descargarArchivoIndividual(c);
+ if (!cancionReproduciendoArchivo && indiceActual < 0) { alert("Selecciona una canción primero."); return; }
+ const c = canciones.find(function(item) { return item.archivo === cancionReproduciendoArchivo; }) || cancionesActuales[indiceActual];
+ if (c) descargarArchivoIndividual(c);
 }
 
 function compartirCancion() {
- if (indiceActual < 0) { alert("Selecciona una canción primero."); return; }
- const c = cancionesActuales[indiceActual];
+ if (!cancionReproduciendoArchivo && indiceActual < 0) { alert("Selecciona una canción primero."); return; }
+ const c = canciones.find(function(item) { return item.archivo === cancionReproduciendoArchivo; }) || cancionesActuales[indiceActual];
+ if (!c) return;
  const modal = document.getElementById("modalCompartir");
  const info = document.getElementById("textoCompartirInfo");
  info.textContent = `"${c.titulo}" — ${c.artista}`;
@@ -2464,8 +2613,8 @@ function cerrarCompartirFuera(e) {
 }
 
 function copiarEnlaceCompartir() {
- if (indiceActual < 0) return;
- const c = cancionesActuales[indiceActual];
+ const c = canciones.find(function(item) { return item.archivo === cancionReproduciendoArchivo; }) || cancionesActuales[indiceActual];
+ if (!c) return;
  const texto = `Escuchando "${c.titulo}" - ${c.artista} en Sound Dens Studio ♫`;
  navigator.clipboard.writeText(texto).then(function() {
  alert("¡Información copiada al portapapeles!");
@@ -2476,24 +2625,24 @@ function copiarEnlaceCompartir() {
 }
 
 function compartirWhatsApp() {
- if (indiceActual < 0) return;
- const c = cancionesActuales[indiceActual];
+ const c = canciones.find(function(item) { return item.archivo === cancionReproduciendoArchivo; }) || cancionesActuales[indiceActual];
+ if (!c) return;
  const texto = encodeURIComponent(`Escuchando "${c.titulo}" de ${c.artista} ♫`);
  window.open(`https://api.whatsapp.com/send?text=${texto}`, "_blank");
  cerrarCompartir();
 }
 
 function compartirTelegram() {
- if (indiceActual < 0) return;
- const c = cancionesActuales[indiceActual];
+ const c = canciones.find(function(item) { return item.archivo === cancionReproduciendoArchivo; }) || cancionesActuales[indiceActual];
+ if (!c) return;
  const texto = encodeURIComponent(`Escuchando "${c.titulo}" de ${c.artista} ♫`);
  window.open(`https://t.me/share/url?url=&text=${texto}`, "_blank");
  cerrarCompartir();
 }
 
 function mostrarInformacionAutor() {
- if (indiceActual < 0) { alert("Selecciona una canción primero."); return; }
- const c = cancionesActuales[indiceActual];
+ const c = canciones.find(function(item) { return item.archivo === cancionReproduciendoArchivo; }) || cancionesActuales[indiceActual];
+ if (!c) { alert("Selecciona una canción primero."); return; }
  const panel = document.getElementById("panelCreditos");
 
  if (!panel.hidden) {
@@ -2512,7 +2661,7 @@ function mostrarInformacionAutor() {
 buscador.addEventListener("input", function() { mostrarAlbumes(buscador.value); });
 buscadorCanciones.addEventListener("input", function() {
  const t = this.value.toLowerCase();
- mostrarCanciones(cancionesActuales.filter(function(c) { return (c.titulo + " " + c.artista).toLowerCase().includes(t); }));
+ mostrarCanciones(cancionesActuales.filter(function(c) { return (c.titulo + " " + c.artista + " " + c.album).toLowerCase().includes(t); }));
 });
 
 const volG = localStorage.getItem("volumen");
@@ -2538,6 +2687,8 @@ window.addEventListener("DOMContentLoaded", function() {
  if (idx !== -1) {
  indiceActual = idx;
  const cancion = cancionesActuales[idx];
+ cancionReproduciendoArchivo = cancion.archivo;
+ cancionReproduciendoAlbum = cancion.album;
  audio.src = obtenerRutaAudio(cancion);
  audio.load();
  const textoMarq = cancion.titulo + " — " + cancion.artista + " (" + cancion.album + ")";
