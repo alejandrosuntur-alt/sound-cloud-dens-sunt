@@ -762,12 +762,167 @@ h2 { margin-top: 20px; font-weight: 700; letter-spacing: -0.5px; font-size: 21px
 audio { display: none; }
 
 @media (max-width: 768px) {
- body { padding-bottom: 290px; }
+ body { padding-bottom: 245px; }
+
+ header {
+ padding: 12px 14px;
+ gap: 8px;
+ }
+ .brand-container { gap: 10px; }
+ .brand-logo { width: 34px; height: 34px; font-size: 17px; border-radius: 10px; }
+ header h1 { font-size: 17px; }
+ header p { font-size: 11px; margin-top: 1px; }
+ .badge-hifi { font-size: 9px; padding: 4px 10px; letter-spacing: 1px; }
+
+ main { padding: 14px 12px; }
+
+ #lyricsStage {
+ margin: 14px 0;
+ padding: 14px;
+ border-radius: 18px;
+ }
+ .lyrics-stage-top { gap: 8px; margin-bottom: 10px; }
+ .lyrics-stage-top h2 { font-size: 15px; }
+ .lyrics-stage-top p { font-size: 11px; }
+ .lyrics-live { font-size: 9px; padding: 4px 9px; }
+ #seccionLetra { padding: 12px; border-radius: 14px; }
+ #letraKaraoke { height: 130px; padding: 8px 4px; }
+ .lineaLetra { font-size: 13px; padding: 6px 0; }
+ .lineaLetra.activa { font-size: 16px; }
+
+ .tools-area {
+ margin: 14px 0;
+ padding: 12px 14px;
+ border-radius: 16px;
+ }
+ .tools-heading { margin-bottom: 10px; }
+ .tools-heading small { display: none; }
+ .player-actions .boton {
+ flex: 1 1 calc(50% - 5px);
+ padding: 9px 10px;
+ font-size: 12px;
+ border-radius: 11px;
+ text-align: center;
+ }
+
+ .section-header { gap: 10px; margin-bottom: 14px; }
+ .section-header h2 { margin: 0; font-size: 17px; }
+ .search-wrapper { max-width: 100%; }
+ .search-wrapper input {
+ padding: 10px 14px 10px 38px;
+ font-size: 13px;
+ border-radius: 12px;
+ }
+ .search-icon { left: 12px; font-size: 13px; }
+
+ /* Álbumes más pequeños y compactos en celular (3 por fila) */
+ #albumes {
+ grid-template-columns: repeat(3, minmax(0, 1fr));
+ gap: 10px;
+ }
+ .album {
+ padding: 7px;
+ border-radius: 13px;
+ }
+ .album:hover { transform: none; }
+ .album-cover-wrap { border-radius: 9px; }
+ .album-info-row { margin-top: 6px; gap: 4px; }
+ .album h3 { font-size: 11px; margin-bottom: 1px; }
+ .album p { font-size: 9.5px; }
+ .indicador-melodia { height: 12px; padding: 1px 4px; }
+ .indicador-melodia span { width: 2px; }
+
+ /* Vista de álbum fácil con una mano */
+ .album-view-bar { gap: 10px; margin-bottom: 12px; }
+ .album-view-bar .boton { padding: 8px 12px; font-size: 12px; border-radius: 11px; }
+ #tituloAlbum { font-size: 17px !important; }
+
+ #controles {
+ flex-wrap: nowrap;
+ overflow-x: auto;
+ gap: 8px;
+ padding-bottom: 4px;
+ margin-bottom: 12px;
+ scrollbar-width: none;
+ }
+ #controles::-webkit-scrollbar { display: none; }
+ #controles .boton {
+ flex: 0 0 auto;
+ padding: 8px 12px;
+ font-size: 11.5px;
+ border-radius: 11px;
+ }
+
+ .cancion {
+ padding: 9px 10px;
+ gap: 10px;
+ border-radius: 13px;
+ margin-bottom: 8px;
+ }
+ .cancion:hover { transform: none; }
+ .track-index { min-width: 18px; font-size: 11.5px; }
+ .cancion img { width: 42px; height: 42px; border-radius: 8px; }
+ .cancion .cancion-datos { min-width: 0; flex: 1 1 calc(100% - 68px); }
+ .cancion h3 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ .cancion p { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+ .acciones-cancion {
+ width: 100%;
+ justify-content: space-between;
+ gap: 6px;
+ }
+ .btn-cancion-accion {
+ padding: 6px 8px;
+ font-size: 10.5px;
+ border-radius: 8px;
+ }
+ .cancion .btn-reproducir-pista {
+ flex: 1;
+ padding: 7px 10px !important;
+ font-size: 11.5px !important;
+ border-radius: 9px;
+ }
+
  .eq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
  .fx-grid { grid-template-columns: 1fr; }
- #letraKaraoke { height: 170px; }
- .lineaLetra.activa { font-size: 18px; }
- #reproductor { bottom: 8px; width: calc(100% - 16px); padding: 14px 16px; border-radius: 20px; }
+
+ /* Reproductor inferior compacto y cómodo en celular */
+ #reproductor {
+ bottom: 6px;
+ left: 6px;
+ width: calc(100% - 12px);
+ padding: 10px 12px;
+ border-radius: 18px;
+ }
+ #parteSuperior { gap: 10px; flex-wrap: nowrap; }
+ #portadaActual { width: 46px; height: 46px; border-radius: 10px; flex-shrink: 0; }
+ #infoActual { min-width: 0; flex: 1; }
+ #marquesinaTexto { font-size: 13px; }
+ #artistaActual { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ #botonMeEncanta { font-size: 19px; padding: 2px; flex-shrink: 0; }
+ .player-transport { gap: 5px; flex-shrink: 0; }
+ .btn-transport { width: 34px; height: 34px; font-size: 12px; }
+ .btn-transport.play-main { width: 38px; height: 38px; font-size: 13px; }
+
+ #miniCola { margin: 7px 0 2px; padding: 7px 10px; border-radius: 11px; }
+ #miniColaTitulo { font-size: 8.5px; margin-bottom: 4px; }
+ .miniTema { padding: 5px 9px; font-size: 10.5px; max-width: 135px; }
+
+ #controlesAudio {
+ gap: 8px;
+ margin-top: 8px;
+ flex-wrap: nowrap;
+ }
+ #barraProgreso { min-width: 70px; height: 5px; }
+ #barraVolumen { width: 58px; height: 5px; }
+ #tiempoActual, #duracionTotal, #porcentajeVolumen {
+ font-size: 10px;
+ min-width: 28px;
+ }
+ #iconoVolumen { font-size: 14px; }
+
+ #ecualizador { height: 22px; gap: 2.5px; margin-top: 6px; }
+ #ecualizador div { width: 3px; }
 }
 </style>
 </head>
