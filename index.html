@@ -656,7 +656,7 @@ h2 { margin-top: 20px; font-weight: 700; letter-spacing: -0.5px; font-size: 21px
 
 .eq-grid {
  display: grid;
- grid-template-columns: repeat(5, minmax(0, 1fr));
+ grid-template-columns: repeat(6, minmax(0, 1fr));
  gap: 14px;
  margin: 14px 0;
 }
@@ -786,6 +786,10 @@ h2 { margin-top: 20px; font-weight: 700; letter-spacing: -0.5px; font-size: 21px
 
 audio { display: none; }
 
+@media (max-width: 900px) {
+ .eq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (max-width: 768px) {
  body { padding-bottom: 245px; }
 
@@ -911,7 +915,8 @@ audio { display: none; }
  border-radius: 9px;
  }
 
- .eq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .eq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+ .eq-band label { font-size: 9.5px; }
  .fx-grid { grid-template-columns: 1fr; }
 
  /* Reproductor inferior compacto y cómodo en celular */
@@ -1000,16 +1005,17 @@ audio { display: none; }
  <button class="boton primario" onclick="descargarCancionActual()">📥 Descargar pista actual</button>
  <button class="boton" onclick="compartirCancion()">↗ Compartir</button>
  <button class="boton" onclick="mostrarInformacionAutor()">ⓘ Ficha técnica</button>
- <button class="boton" onclick="alternarEcualizador()">🎛 Ecualizador 5-Bandas</button>
+ <button class="boton" onclick="alternarEcualizador()">🎛 Ecualizador 6-Bandas</button>
  </div>
  <section id="panelEcualizador" class="eq-panel" hidden>
- <strong style="font-size:13px; color:var(--text-primary);">Ecualizador Paramétrico · Ajuste en tiempo real</strong>
+ <strong style="font-size:13px; color:var(--text-primary);">Ecualizador Paramétrico 6 Bandas · Ajuste en tiempo real</strong>
  <div class="eq-grid">
- <div class="eq-band"><label for="eqBajos">Sub-Bajos (60Hz)</label><input id="eqBajos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
- <div class="eq-band"><label for="eqSemi">Graves (250Hz)</label><input id="eqSemi" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
- <div class="eq-band"><label for="eqMedios">Medios (1kHz)</label><input id="eqMedios" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
- <div class="eq-band"><label for="eqMediosAgudos">Presencia (4kHz)</label><input id="eqMediosAgudos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
- <div class="eq-band"><label for="eqAgudos">Brillo (10kHz)</label><input id="eqAgudos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
+ <div class="eq-band"><label for="eqBajos">Bajos (60Hz)</label><input id="eqBajos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
+ <div class="eq-band"><label for="eqSemiBajos">Semi-Bajos (170Hz)</label><input id="eqSemiBajos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
+ <div class="eq-band"><label for="eqMediosBajos">Medios-Bajos (500Hz)</label><input id="eqMediosBajos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
+ <div class="eq-band"><label for="eqMedios">Medios (1.5kHz)</label><input id="eqMedios" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
+ <div class="eq-band"><label for="eqMediosAgudos">Medios-Agudos (4kHz)</label><input id="eqMediosAgudos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
+ <div class="eq-band"><label for="eqAgudos">Agudos (10kHz)</label><input id="eqAgudos" type="range" min="-12" max="12" value="0"><div class="eq-value">0 dB</div></div>
  </div>
 
  <div class="fx-grid">
@@ -2319,10 +2325,10 @@ function actualizarIconoVolumen() {
 iconoVolumen.addEventListener("click", function() { audio.muted = !audio.muted; actualizarIconoVolumen(); });
 
 /* =====================================================
- ECUALIZADOR REAL (WEB AUDIO API), GRAVES, ENVOLVENTE Y VISUALIZADOR
+ ECUALIZADOR REAL 6 BANDAS (WEB AUDIO API), GRAVES, ENVOLVENTE Y VISUALIZADOR
  ===================================================== */
-const idsEQ = ["eqBajos", "eqSemi", "eqMedios", "eqMediosAgudos", "eqAgudos"];
-const frecuenciasEQ = [60, 250, 1000, 4000, 10000];
+const idsEQ = ["eqBajos", "eqSemiBajos", "eqMediosBajos", "eqMedios", "eqMediosAgudos", "eqAgudos"];
+const frecuenciasEQ = [60, 170, 500, 1500, 4000, 10000];
 const inputRefuerzoGraves = document.getElementById("refuerzoGraves");
 const inputSonidoEnvolvente = document.getElementById("sonidoEnvolvente");
 const valorRefuerzoGraves = document.getElementById("valorRefuerzoGraves");
